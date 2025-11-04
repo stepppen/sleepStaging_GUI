@@ -3,6 +3,9 @@ from tkinter import ttk
 import fsm
 import math
 from time import sleep
+import threading
+from random import choice
+from threading import Thread
 
 width = 600
 height = 400
@@ -13,8 +16,48 @@ x_factor = 0.04
 # height stretch
 y_amplitude = 80
 str1 = "sin(x)=blue"
+bedFrequency = 0
+currentStage = "awake"
+# import mock_data
+# mock_data.returnStage()
+# stageFSM(self, "awake")
 
-class MyCheckboxFrame(customtkinter.CTkFrame):
+def returnStage() -> str:
+    threading.Timer(1.0, returnStage).start()
+    print(choice(['awake', 'N1', 'N2', 'N3', 'REM']))
+    return choice(['awake', 'N1', 'N2', 'N3', 'REM'])
+
+def stageFSM(self, currentStage):
+    if currentStage == "awake":
+        bedFrequency = 8
+    elif currentStage == "N1":
+        bedFrequency = 7
+    elif currentStage == "N2":
+        bedFrequency = 4
+    elif currentStage == "N3":
+        bedFrequency = 2
+    elif currentStage == "REM":
+        bedFrequency = 1
+    print(currentStage)
+    BedFreq = customtkinter.CTkLabel(self, text=bedFrequency)
+    BedFreq.grid(row=3, column=0, padx=10, pady=(10, 0), sticky="w")
+
+def threadedGraph(self):
+    c = customtkinter.CTkCanvas(width=width, height=height, bg='gray50')
+    c.grid(row=2, column=0, padx=10, pady=10, sticky="ew", columnspan = 5)
+    c.configure(bg="gray80")
+    c.create_line(0, center, 800, center, fill='green')
+    xy1 = [0,0,1,1]
+    sin_line = c.create_line(xy1, fill='blue')
+    for x in range(800):
+        # x coordinates
+        xy1.append(x * x_increment)
+        # y coordinates
+        xy1.append(int(math.sin(x * x_factor) * y_amplitude) + center)
+        c.coords(sin_line, xy1)
+        self.update()
+
+class StateBox(customtkinter.CTkFrame):
     def __init__(self, master, state):
         super().__init__(master)
         self.grid_columnconfigure(0, weight=1)
@@ -22,21 +65,9 @@ class MyCheckboxFrame(customtkinter.CTkFrame):
         self.checkboxes = []
 
         self.title = customtkinter.CTkLabel(self, text=self.title, corner_radius=6)
+        # if state == 
+        #     self.title.configure(fg_color="gray30")
         self.title.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="ew")
-
-        fsm.go(state)
-
-        # for i, value in enumerate(self.values):
-        #     checkbox = customtkinter.CTkCheckBox(self, text=value)
-        #     checkbox.grid(row=i+1, column=0, padx=10, pady=(10, 0), sticky="w")
-        #     self.checkboxes.append(checkbox)
-
-    # def get(self):
-    #     checked_checkboxes = []
-    #     for checkbox in self.checkboxes:
-    #         if checkbox.get() == 1:
-    #             checked_checkboxes.append(checkbox.cget("text"))
-    #     return checked_checkboxes
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -44,11 +75,13 @@ class App(customtkinter.CTk):
 
         self.title("my app")
         self.geometry("800x600")
+        
 
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1, uniform="fred")
         self.grid_rowconfigure((0), weight=1)
-        self.grid_rowconfigure((1), weight=2)
+        self.grid_rowconfigure((1, 3), weight=2)
         self.grid_rowconfigure((2), weight=4)
+        
 
         #Header
         header_frame = ttk.Frame(self)
@@ -64,52 +97,82 @@ class App(customtkinter.CTk):
 
 
         #Current Mode
-        self.checkbox_frame = MyCheckboxFrame(self, "Awake")
+        self.checkbox_frame = StateBox(self, "Awake")
         self.checkbox_frame.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="ew")
 
-        self.checkbox_frame_2 = MyCheckboxFrame(self, "N1")
+        self.checkbox_frame_2 = StateBox(self, "N1")
         # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_2.grid(row=1, column=1, padx=10, pady=(10, 0), sticky="ew")
 
-        self.checkbox_frame_3 = MyCheckboxFrame(self, "N2")
+        self.checkbox_frame_3 = StateBox(self, "N2")
         # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_3.grid(row=1, column=2, padx=10, pady=(10, 0), sticky="ew")
 
-        self.checkbox_frame_4 = MyCheckboxFrame(self, "N3")
+        self.checkbox_frame_4 = StateBox(self, "N3")
         # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_4.grid(row=1, column=3, padx=10, pady=(10, 0), sticky="ew")
 
-        self.checkbox_frame_5 = MyCheckboxFrame(self, "REM")
+        self.checkbox_frame_5 = StateBox(self, "REM")
         # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_5.grid(row=1, column=4, padx=10, pady=(10, 0), sticky="ew")
 
 
         # Freq/Amp -> Return Bed rocking from FSM
-        c = customtkinter.CTkCanvas(width=width, height=height, bg='gray50')
-        c.grid(row=2, column=0, padx=10, pady=10, sticky="ew", columnspan = 5)
-        c.configure(bg="gray80")
+
         # sine_frame = ttk.Frame(c)
         # sine_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew", columnspan = 5)
         # sine_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="fred")
         # sine_frame.grid_rowconfigure((0), weight=1)
 
         # sine_frame.configure(fg_color="gray50", pady=(10, 0))
+        # thread = Thread(target = threadedGraph(self))
+        # thread.start()
+        
+        # self.checkbox_frame = displayFrequency(self, "Awake")
+        # self.checkbox_frame.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="ew")
+        
+        #Display Frequency
+        self.stage_var = customtkinter.StringVar()
+        self.label = ttk.Label(self, textvariable=self.stage_var, font = "Calibri 24")
+        self.label.grid(row=0, column=1, padx=10, pady=10, sticky="ew", columnspan = 1)
+        self.update_stage()
 
-        c.create_line(0, center, 800, center, fill='green')
-        xy1 = [0,0,1,1]
-        sin_line = c.create_line(xy1, fill='blue')
-        for x in range(800):
-            # x coordinates
-            xy1.append(x * x_increment)
-            # y coordinates
-            xy1.append(int(math.sin(x * x_factor) * y_amplitude) + center)
-            c.coords(sin_line, xy1)
-            self.update()
 
+        
+    def returnStage(self):
+        result = choice(['awake', 'N1', 'N2', 'N3', 'REM'])
+        print(result)
+        return result
+    
+    def update_stage(self):
+        self.stage_var.set(self.returnStage())
+        self.checkbox_frame.configure(fg_color="gray80")
+        self.checkbox_frame_2.configure(fg_color="gray80")
+        self.checkbox_frame_3.configure(fg_color="gray80")
+        self.checkbox_frame_4.configure(fg_color="gray80")
+        self.checkbox_frame_5.configure(fg_color="gray80")
+        
+        #update visuals
+        if self.stage_var.get() == "awake": 
+            self.checkbox_frame.configure(fg_color="gray50")
+        if self.stage_var.get() == "N1": 
+            self.checkbox_frame_2.configure(fg_color="gray50")
+        if self.stage_var.get() == "N2": 
+            self.checkbox_frame_3.configure(fg_color="gray50")
+        if self.stage_var.get() == "N3": 
+            self.checkbox_frame_4.configure(fg_color="gray50")
+        if self.stage_var.get() == "REM": 
+            self.checkbox_frame_5.configure(fg_color="gray50")
+        self.after(2000, self.update_stage)
+
+    def displayFrequency(value):
+        print(value)
 
     def button_callback(self):
         print("checked checkboxes:", self.checkbox_frame.get())
         print("checked checkboxes:", self.checkbox_frame_2.get())
+
+
 
 app = App()
 app.mainloop()
