@@ -1,61 +1,15 @@
 import customtkinter as customtkinter
 from tkinter import ttk
-import fsm
 import math
-from time import sleep
-import threading
 from random import choice
-from threading import Thread
 
-width = 600
-height = 400
-center = height//2
+width = 800
+height = 600
+center = 200
 x_increment = 1
-# width stretch
 x_factor = 0.04
-# height stretch
-y_amplitude = 80
-str1 = "sin(x)=blue"
-bedFrequency = 0
-currentStage = "awake"
-# import mock_data
-# mock_data.returnStage()
-# stageFSM(self, "awake")
-
-def returnStage() -> str:
-    threading.Timer(1.0, returnStage).start()
-    print(choice(['awake', 'N1', 'N2', 'N3', 'REM']))
-    return choice(['awake', 'N1', 'N2', 'N3', 'REM'])
-
-def stageFSM(self, currentStage):
-    if currentStage == "awake":
-        bedFrequency = 8
-    elif currentStage == "N1":
-        bedFrequency = 7
-    elif currentStage == "N2":
-        bedFrequency = 4
-    elif currentStage == "N3":
-        bedFrequency = 2
-    elif currentStage == "REM":
-        bedFrequency = 1
-    print(currentStage)
-    BedFreq = customtkinter.CTkLabel(self, text=bedFrequency)
-    BedFreq.grid(row=3, column=0, padx=10, pady=(10, 0), sticky="w")
-
-def threadedGraph(self):
-    c = customtkinter.CTkCanvas(width=width, height=height, bg='gray50')
-    c.grid(row=2, column=0, padx=10, pady=10, sticky="ew", columnspan = 5)
-    c.configure(bg="gray80")
-    c.create_line(0, center, 800, center, fill='green')
-    xy1 = [0,0,1,1]
-    sin_line = c.create_line(xy1, fill='blue')
-    for x in range(800):
-        # x coordinates
-        xy1.append(x * x_increment)
-        # y coordinates
-        xy1.append(int(math.sin(x * x_factor) * y_amplitude) + center)
-        c.coords(sin_line, xy1)
-        self.update()
+y_amplitude = 240
+freqAmp = 0.8
 
 class StateBox(customtkinter.CTkFrame):
     def __init__(self, master, state):
@@ -65,18 +19,17 @@ class StateBox(customtkinter.CTkFrame):
         self.checkboxes = []
 
         self.title = customtkinter.CTkLabel(self, text=self.title, corner_radius=6)
-        # if state == 
-        #     self.title.configure(fg_color="gray30")
         self.title.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="ew")
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-
+        self.running = True
         self.title("my app")
-        self.geometry("800x600")
+        self.geometry(f'{width}x{height}')
         
 
+        # grid config
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1, uniform="fred")
         self.grid_rowconfigure((0), weight=1)
         self.grid_rowconfigure((1, 3), weight=2)
@@ -92,60 +45,92 @@ class App(customtkinter.CTk):
         self.label = ttk.Label(header_frame, text = "Sleep Stages", font = "Calibri 24")
         self.label.grid(row=0, column=0, padx=10, pady=10, sticky="ew", columnspan = 1)
 
-        self.button = customtkinter.CTkButton(header_frame, text="Quit", command=self.destroy)
+        self.button = customtkinter.CTkButton(header_frame, text="Quit", command=self.close_app)
         self.button.grid(row=0, column=2, padx=10, pady=10, sticky="ew", columnspan = 1)
 
 
-        #Current Mode
+        #Display: Current Mode
         self.checkbox_frame = StateBox(self, "Awake")
         self.checkbox_frame.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="ew")
 
         self.checkbox_frame_2 = StateBox(self, "N1")
-        # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_2.grid(row=1, column=1, padx=10, pady=(10, 0), sticky="ew")
 
         self.checkbox_frame_3 = StateBox(self, "N2")
-        # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_3.grid(row=1, column=2, padx=10, pady=(10, 0), sticky="ew")
 
         self.checkbox_frame_4 = StateBox(self, "N3")
-        # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_4.grid(row=1, column=3, padx=10, pady=(10, 0), sticky="ew")
 
         self.checkbox_frame_5 = StateBox(self, "REM")
-        # self.checkbox_frame_2.configure(fg_color="transparent")
         self.checkbox_frame_5.grid(row=1, column=4, padx=10, pady=(10, 0), sticky="ew")
 
 
         # Freq/Amp -> Return Bed rocking from FSM
-
-        # sine_frame = ttk.Frame(c)
-        # sine_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew", columnspan = 5)
-        # sine_frame.grid_columnconfigure((0, 1, 2), weight=1, uniform="fred")
-        # sine_frame.grid_rowconfigure((0), weight=1)
-
-        # sine_frame.configure(fg_color="gray50", pady=(10, 0))
-        # thread = Thread(target = threadedGraph(self))
-        # thread.start()
-        
-        # self.checkbox_frame = displayFrequency(self, "Awake")
-        # self.checkbox_frame.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="ew")
-        
-        #Display Frequency
         self.stage_var = customtkinter.StringVar()
-        self.label = ttk.Label(self, textvariable=self.stage_var, font = "Calibri 24")
-        self.label.grid(row=0, column=1, padx=10, pady=10, sticky="ew", columnspan = 1)
+        self.rocking_level_var = customtkinter.StringVar()
+        self.display_text = customtkinter.StringVar()
+
+        #Display Bed Rocking: Graph
         self.update_stage()
+        self.animate_sine()
 
+        #Display Bed Rocking: Val
+        self.label = ttk.Label(self, textvariable=self.display_text, font = "Calibri 24")
+        self.label.grid(row=3, column=0, padx=10, pady=10, sticky="ew", columnspan = 3)
 
+    # generate sine
+    def animate_sine(self):
+        """Animate a scrolling sine wave on the main thread."""
+        self.canvas = customtkinter.CTkCanvas(self, width=width, height=400, bg="gray80")
+        self.canvas.grid(row=2, column=0, padx=10, pady=10, sticky="ew", columnspan=5)
+        self.canvas.create_line(0, center, width, center, fill="green")
+
+        self.sin_line = self.canvas.create_line(0, center, 1, center, fill="blue")
+        self.x_offset = 1
+        self.speed = 5 
+        self.delay = 20 
+
+        self.amp = 0 
+        self.speed = 0
         
-    def returnStage(self):
+
+        def draw_frame():
+            if not self.running:
+                return
+            
+            # amp interpolation
+            diff_amp = float(self.rocking_level_var.get()) - self.amp
+            self.amp += diff_amp * 0.05
+
+            # speed interpolation
+            diff_speed = self.target_speed - self.speed
+            self.speed += diff_speed * 0.05
+            print("current speed: ", self.speed )
+
+            points = []
+            for x in range(width):
+                y = int(math.sin((x + self.x_offset) * x_factor) * (y_amplitude * self.amp)) + center
+                points.extend([x, y])
+            self.canvas.coords(self.sin_line, points)
+            self.x_offset += self.speed
+            # scheduling
+            self.after(self.delay, draw_frame)
+
+        draw_frame()
+    
+    # generate stage
+    def return_stage(self):
         result = choice(['awake', 'N1', 'N2', 'N3', 'REM'])
         print(result)
         return result
-    
+
     def update_stage(self):
-        self.stage_var.set(self.returnStage())
+        if not self.running:
+                return
+        
+        # renew bg
+        self.stage_var.set(self.return_stage())
         self.checkbox_frame.configure(fg_color="gray80")
         self.checkbox_frame_2.configure(fg_color="gray80")
         self.checkbox_frame_3.configure(fg_color="gray80")
@@ -155,120 +140,32 @@ class App(customtkinter.CTk):
         #update visuals
         if self.stage_var.get() == "awake": 
             self.checkbox_frame.configure(fg_color="gray50")
+            self.rocking_level_var.set(0.8)
+            self.target_speed = 3
         if self.stage_var.get() == "N1": 
             self.checkbox_frame_2.configure(fg_color="gray50")
+            self.rocking_level_var.set(0.6)
+            self.target_speed = 2.2
         if self.stage_var.get() == "N2": 
             self.checkbox_frame_3.configure(fg_color="gray50")
+            self.rocking_level_var.set(0.4)
+            self.target_speed = 1.4
         if self.stage_var.get() == "N3": 
             self.checkbox_frame_4.configure(fg_color="gray50")
+            self.rocking_level_var.set(0.2)
+            self.target_speed = 0.6
         if self.stage_var.get() == "REM": 
             self.checkbox_frame_5.configure(fg_color="gray50")
-        self.after(2000, self.update_stage)
+            self.rocking_level_var.set(0.0)
+            self.target_speed = 0
+        
+        display_value = int(float(self.rocking_level_var.get()) * 10)
+        self.display_text.set(f"Bed rocking level: {display_value}/8")
+        self.after(5000, self.update_stage)
 
-    def displayFrequency(value):
-        print(value)
-
-    def button_callback(self):
-        print("checked checkboxes:", self.checkbox_frame.get())
-        print("checked checkboxes:", self.checkbox_frame_2.get())
-
-
+    def close_app(self):
+        self.running = False
+        self.destroy()
 
 app = App()
 app.mainloop()
-
-# import customtkinter as ctk
-# from tkinter import ttk
-# import fsm
-# import mock_data
-# # from tkinter import ttk
-
-
-# def convert():
-#     print("convert")
-
-
-# def submitToFSM():
-#     fsm.go(entry.get())
-
-
-# app = ctk.CTk()
-# app.title("Demo")
-# app.geometry("600x600")
-    
-
-# #Quit
-# quit_button = ctk.CTkButton(master = app, text = "Quit", corner_radius=32, hover_color="#4158D0", command=app.destroy)
-# quit_button.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="w")
-
-# #Title
-# title_label = ttk.Label(master = app, text = "Sleep Stages", font = "Calibri 24")
-# title_label.grid(row=1, column=1, padx=20, pady=(0, 20), sticky="w")
-
-# #info field
-# header_frame = ttk.Frame(master = app)
-# sleep_stage_Awake = ttk.Label(master = header_frame, text = "Awake", font = "Calibri 16")
-# sleep_stage_N1 = ttk.Label(master = header_frame, text = "N1", font = "Calibri 16")
-# sleep_stage_N2 = ttk.Label(master = header_frame, text = "N2", font = "Calibri 16")
-# sleep_stage_N3 = ttk.Label(master = header_frame, text = "N3", font = "Calibri 16")
-# sleep_stage_REM = ttk.Label(master = header_frame, text = "REM", font = "Calibri 16")
-# # sleep_stage_Awake.pack(side = "left", padx = 10)
-# # sleep_stage_N1.pack(side = "left", padx = 10)
-# # sleep_stage_N2.pack(side = "left", padx = 10)
-# # sleep_stage_N3.pack(side = "left", padx = 10)
-# # sleep_stage_REM.pack(side = "left", padx = 10)
-# # header_frame.pack(pady = 10)
-
-
-# # Input field
-# input_frame = ttk.Frame(master = app)
-# entry = ctk.CTkEntry(master = input_frame, placeholder_text="Type anything...")
-# submit = ctk.CTkButton(master = input_frame, text = "Submit", command = submitToFSM)
-# # entry.pack(side = "left", padx = 10)
-# # submit.pack(side = "left", padx = 10)
-# # input_frame.pack(pady = 10)
-
-# #bed rocking frequency
-# title_label = ttk.Label(master = app, text = "Frequency", font = "Calibri 16")
-# # title_label.pack(pady = 5)
-
-# app.mainloop()    
-
-
-
-
-
-
-# #instance of the Tk class, which initializes Tk and 
-# #creates its associated Tcl interpreter
-
-# #root window, which serves as the main window of the application
-# root = Tk()
-
-# style = ttk.Style()
-# style.configure("Red.TButton", foreground="red", font=("Arial", 14))
-
-
-# #creates a frame widget, which in this case will 
-# #contain a label and a button 
-# frm = ttk.Frame(root, padding=10) # frame is fit inside the root window
-# frm.grid()
-
-# #label widget -> static text string; col 0 
-# # & buttom with destroy cmd; col1
-# label = ttk.Label(frm, text="Hello World!")
-# # label.grid(column=0, row=0)
-# label.pack()
-# label.pack(side="left", ipady="400px")
-
-# btn = ttk.Button(frm, text="Quit", command=root.destroy, style="Red.TButton")
-# btn.pack()                     # defaults to side = "top"
-# btn.pack(fill="x", ipady="40px")
-# btn.pack(expand=1)
-
-
-
-# # puts everything on the display, and responds to user input
-# root.mainloop()
-
-#
