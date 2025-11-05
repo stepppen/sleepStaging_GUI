@@ -70,6 +70,8 @@ class App(customtkinter.CTk):
         self.stage_var = customtkinter.StringVar()
         self.rocking_level_var = customtkinter.StringVar()
         self.display_text = customtkinter.StringVar()
+        self.stages = ['awake', 'N1', 'N2', 'N3', 'REM']
+        self.stage_index = 0
 
         #Display Bed Rocking: Graph
         self.update_stage()
@@ -120,45 +122,55 @@ class App(customtkinter.CTk):
         draw_frame()
     
     # generate stage
-    def return_stage(self):
-        result = choice(['awake', 'N1', 'N2', 'N3', 'REM'])
-        print(result)
-        return result
+    # def return_stage(self):
+    #     stages = choice(['awake', 'N1', 'N2', 'N3', 'REM'])
+
+    #     print(result)
+    #     return result
 
     def update_stage(self):
         if not self.running:
                 return
         
         # renew bg
-        self.stage_var.set(self.return_stage())
+        # self.stage_var.set(self.return_stage())
         self.checkbox_frame.configure(fg_color="gray80")
         self.checkbox_frame_2.configure(fg_color="gray80")
         self.checkbox_frame_3.configure(fg_color="gray80")
         self.checkbox_frame_4.configure(fg_color="gray80")
         self.checkbox_frame_5.configure(fg_color="gray80")
-        
+
+        stage = self.stages[self.stage_index]
+        self.stage_index = (self.stage_index + 1) % len(self.stages)
+
         #update visuals
-        if self.stage_var.get() == "awake": 
+        if stage == "awake": 
+            self.stage_var.set(stage)
             self.checkbox_frame.configure(fg_color="gray50")
             self.rocking_level_var.set(0.8)
             self.target_speed = 3
-        if self.stage_var.get() == "N1": 
+        if stage == "N1": 
+            self.stage_var.set(stage)
             self.checkbox_frame_2.configure(fg_color="gray50")
             self.rocking_level_var.set(0.6)
             self.target_speed = 2.2
-        if self.stage_var.get() == "N2": 
+        if stage == "N2": 
+            self.stage_var.set(stage)
             self.checkbox_frame_3.configure(fg_color="gray50")
             self.rocking_level_var.set(0.4)
             self.target_speed = 1.4
-        if self.stage_var.get() == "N3": 
+        if stage == "N3": 
+            self.stage_var.set(stage)
             self.checkbox_frame_4.configure(fg_color="gray50")
             self.rocking_level_var.set(0.2)
             self.target_speed = 0.6
-        if self.stage_var.get() == "REM": 
+        if stage == "REM":
+            self.stage_var.set(stage) 
             self.checkbox_frame_5.configure(fg_color="gray50")
             self.rocking_level_var.set(0.0)
             self.target_speed = 0
         
+        # Actual Output from FSM -----------------------------------
         display_value = int(float(self.rocking_level_var.get()) * 10)
         self.display_text.set(f"Bed rocking level: {display_value}/8")
         self.after(5000, self.update_stage)
